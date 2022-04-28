@@ -6,10 +6,18 @@ const hasChanged = require("./hasChanged");
 async function run() {
   try {
     const paths = core.getInput("paths", { required: true });
-    const isPullRequest = github.context.eventName == "pull_request";
+    core.info("Checking the following paths for changes:");
+    for (const path of paths.split(" ")) {
+      core.info("  " + path);
+    }
+    const isPullRequest = github.context.eventName === "pull_request";
+    console.log(`GitHub Action event name: ${github.context.eventName}`);
+    console.log(`Triggered by pull request? ${isPullRequest}`);
+
     let targetBranch;
     if (isPullRequest) {
-      targetBranch = github.context.targetBranch;
+      targetBranch = github.context.payload.pull_request.base.ref;
+      core.info(`Comparing to pull request target branch: ${targetBranch}`);
     }
     const changed = await hasChanged(paths, targetBranch);
 

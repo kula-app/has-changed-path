@@ -1,10 +1,10 @@
 const exec = require("@actions/exec");
 const core = require("@actions/core");
 
-async function main(pathsToSearch = "") {
+async function main(pathsToSearch = "", targetBranch) {
   throwsForInvalidPaths(pathsToSearch);
 
-  return hasChanged(pathsToSearch);
+  return hasChanged(pathsToSearch, targetBranch);
 }
 
 function throwsForInvalidPaths(pathsToSearch) {
@@ -34,10 +34,41 @@ async function hasChanged(pathsToSearch, targetBranch) {
   );
 
   // Detect the target hash to compare to
-  let targetHash;
   if (targetBranch) {
     core.info(`Comparing against destination branch: ${targetBranch}`);
-    targetHash = targetBranch;
+    core.info(`Fetching remote branch`);
+    await exec.exec(
+      "git",
+      [
+        "fetch",
+        "--jobs=10",
+        "--no-tags",
+        "--depth=1",
+        "--no-recurse-submodules",
+        "origin",
+        `${targetBranch}:${targetBranch}`,
+      ],
+      {
+        ignoreReturnCode: true,
+        silent: false,
+        cwd: cwd,
+      }
+    );
+    core.info(`Comparing HEAD to branch ${targetBranch}`);
+    const output = await exec.getExecOutput(
+      "git",
+      ["diff", "--quiet", "HEAD", targetBranch, "--", ...paths],
+      {
+        ignoreReturnCode: true,
+        silent: false,
+        cwd: cwd,
+      }
+    );
+    // If there is output in the stderr, something went wrong
+    if (output.stderr.length > 0) {
+      throw new Error(`git diff had an failed. Output:\n${output.stderr}`);
+    }
+    return output.exitCode === 1;
   } else {
     // Print information about current commit
     core.info(`Current working directory: ${cwd}`);
@@ -55,6 +86,7 @@ async function hasChanged(pathsToSearch, targetBranch) {
         `Failed to detect previous commit, exit code ${currentCommit.exitCode}`
       );
     }
+
     // Get hash of previous commit
     const previousCommitHash = await exec.getExecOutput(
       "git",
@@ -65,6 +97,7 @@ async function hasChanged(pathsToSearch, targetBranch) {
         cwd: cwd,
       }
     );
+
     if (previousCommitHash.exitCode != 0) {
       throw new Error(
         `Failed to detect previous commit, exit code ${previousCommitHash.exitCode}`
@@ -73,23 +106,23 @@ async function hasChanged(pathsToSearch, targetBranch) {
     core.info(
       `Comparing against previous commit:\n${previousCommitHash.stdout}`
     );
-    targetHash = previousCommitHash.stdout.trim();
-  }
-  //  --quiet: exits with 1 if there were differences (https://git-scm.com/docs/git-diff)
-  const exitCode = await exec.getExecOutput(
-    "git",
-    ["diff", "--quiet", "HEAD", targetHash, "--", ...paths],
-    {
-      ignoreReturnCode: true,
-      silent: false,
-      cwd: cwd,
+    const targetHash = previousCommitHash.stdout.trim();
+    //  --quiet: exits with 1 if there were differences (https://git-scm.com/docs/git-diff)
+    const output = await exec.getExecOutput(
+      "git",
+      ["diff", "--quiet", "HEAD", targetHash, "--", ...paths],
+      {
+        ignoreReturnCode: true,
+        silent: false,
+        cwd: cwd,
+      }
+    );
+    // If there is output in the stderr, something went wrong
+    if (output.stderr.length > 0) {
+      throw new Error(`git diff had an failed. Output:\n${output.stderr}`);
     }
-  );
-  // If there is output in the stderr, something went wrong
-  if (exitCode.stderr.length > 0) {
-    throw new Error(`git diff had an failed. Output:\n${exitCode.stderr}`);
+    return output.exitCode === 1;
   }
-  return exitCode === 1;
 }
 
 module.exports = main;
