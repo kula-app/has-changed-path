@@ -1,12 +1,21 @@
 name: "Has Changed Path"
-description: "Detects whether a path or a combination of paths were changed in the previous commit"
+description: "Detects whether a path or a combination of paths were changed in the previous commit or in a pull request"
 inputs:
-  paths: # one or more paths
+  paths:
     description: "Paths to detect changes"
     required: true
+  only_worktree:
+    description: "Only detect changes in the current worktree"
+    required: false
+    default: "false"
+  ignore_pull_request:
+    description: "Disables the comparison with the target branch if run for a pull request"
+    required: false
+    default: "false"
 outputs:
   changed:
     description: "Boolean indicating if the paths were changed in previous commit"
+
 runs:
   using: "node16"
   main: "dist/index.js"

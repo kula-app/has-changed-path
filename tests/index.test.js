@@ -9,6 +9,8 @@ const execOpts = { env: process.env, ignoreReturnCode: true, silent: true };
 describe("index.js", () => {
   beforeEach(() => {
     delete process.env["INPUT_PATHS"];
+    delete process.env["INPUT_ONLY_WORKTREE"];
+    delete process.env["INPUT_IGNORE_PULL_REQUEST"];
   });
 
   test("exists with error on missing input", async () => {
@@ -36,6 +38,8 @@ describe("index.js", () => {
 
   test("exists 0 on valid input", async () => {
     process.env["INPUT_PATHS"] = "src/ tests/";
+    process.env["INPUT_ONLY_WORKTREE"] = "false";
+    process.env["INPUT_IGNORE_PULL_REQUEST"] = "false";
     const actionFile = path.join(getSrcRoot(), "index.js");
 
     const returnCode = await exec.exec("node", [actionFile], execOpts);
@@ -45,6 +49,8 @@ describe("index.js", () => {
   // shows how the runner will run a JS action with env / stdout protocol
   test("log action run", (done) => {
     process.env["INPUT_PATHS"] = "common/";
+    process.env["INPUT_ONLY_WORKTREE"] = "false";
+    process.env["INPUT_IGNORE_PULL_REQUEST"] = "false";
     const actionFile = path.join(getSrcRoot(), "index.js");
 
     cp.exec(`node ${actionFile}`, { env: process.env }, (err, res) => {

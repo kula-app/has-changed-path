@@ -1,10 +1,10 @@
 const exec = require("@actions/exec");
 const core = require("@actions/core");
 
-async function main(pathsToSearch = "", targetBranch) {
-  throwsForInvalidPaths(pathsToSearch);
+async function main({ paths = "", targetBranch, detectChangesInWorktree }) {
+  throwsForInvalidPaths(paths);
 
-  return hasChanged(pathsToSearch, targetBranch);
+  return hasChanged(paths, targetBranch, detectChangesInWorktree);
 }
 
 function throwsForInvalidPaths(pathsToSearch) {
@@ -12,7 +12,11 @@ function throwsForInvalidPaths(pathsToSearch) {
   throw new Error("pathsToSearch needs to be a string");
 }
 
-async function hasChanged(pathsToSearch, targetBranch) {
+async function hasChanged(
+  pathsToSearch,
+  targetBranch,
+  detectChangesInWorktree
+) {
   const paths = pathsToSearch.split(" ");
   const cwd = process.env.GITHUB_WORKSPACE || ".";
 
@@ -67,6 +71,25 @@ async function hasChanged(pathsToSearch, targetBranch) {
     // If there is output in the stderr, something went wrong
     if (output.stderr.length > 0) {
       throw new Error(`git diff had an failed. Output:\n${output.stderr}`);
+    }
+    return output.exitCode === 1;
+  } else if (detectChangesInWorktree) {
+    // Print information about current commit
+    core.info(`Current working directory: ${cwd}`);
+    // Detect changes in existing files
+    core.info(`Detect changes in paths`);
+    const output = await exec.getExecOutput(
+      "git",
+      ["status", "--porcelain", "--", ...paths],
+      {
+        ignoreReturnCode: true,
+        silent: false,
+        cwd: cwd,
+      }
+    );
+    // If there is output in the stderr, something went wrong
+    if (output.stderr.length > 0) {
+      throw new Error(`git status had an failed. Output:\n${output.stderr}`);
     }
     return output.exitCode === 1;
   } else {
