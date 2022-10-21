@@ -21,7 +21,9 @@ async function run() {
     console.log(`Triggered by pull request? ${isPullRequest}`);
 
     const shouldIgnorePullRequest = core.getBooleanInput("ignore_pull_request");
-    console.log(`Shoudl ignore pull request? ${shouldIgnorePullRequest}`);
+    console.log(
+      `Should ignore pull request and only check files in current branch? ${shouldIgnorePullRequest}`
+    );
 
     let targetBranch;
     if (isPullRequest && !shouldIgnorePullRequest) {

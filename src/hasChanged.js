@@ -91,7 +91,7 @@ async function hasChanged(
     if (output.stderr.length > 0) {
       throw new Error(`git status had an failed. Output:\n${output.stderr}`);
     }
-    return output.exitCode === 1;
+    return output.stdout.length > 0;
   } else {
     // Print information about current commit
     core.info(`Current working directory: ${cwd}`);

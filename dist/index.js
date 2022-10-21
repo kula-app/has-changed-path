@@ -10870,7 +10870,7 @@ async function hasChanged(
     if (output.stderr.length > 0) {
       throw new Error(`git status had an failed. Output:\n${output.stderr}`);
     }
-    return output.exitCode === 1;
+    return output.stdout.length > 0;
   } else {
     // Print information about current commit
     core.info(`Current working directory: ${cwd}`);
@@ -11156,7 +11156,9 @@ async function run() {
     console.log(`Triggered by pull request? ${isPullRequest}`);
 
     const shouldIgnorePullRequest = core.getBooleanInput("ignore_pull_request");
-    console.log(`Shoudl ignore pull request? ${shouldIgnorePullRequest}`);
+    console.log(
+      `Should ignore pull request and only check files in current branch? ${shouldIgnorePullRequest}`
+    );
 
     let targetBranch;
     if (isPullRequest && !shouldIgnorePullRequest) {
