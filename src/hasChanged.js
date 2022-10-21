@@ -75,6 +75,7 @@ async function hasChanged(
     return output.exitCode === 1;
   } else if (detectChangesInWorktree) {
     // Print information about current commit
+    core.info(`Detecting changes in current worktree`);
     core.info(`Current working directory: ${cwd}`);
     // Detect changes in existing files
     core.info(`Detect changes in paths`);
