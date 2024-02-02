@@ -17,7 +17,7 @@ outputs:
     description: "Boolean indicating if the paths were changed in previous commit"
 
 runs:
-  using: "node16"
+  using: "node20"
   main: "dist/index.js"
 branding:
   icon: terminal
